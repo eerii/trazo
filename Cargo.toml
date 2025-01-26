@@ -1,0 +1,69 @@
+[package]
+name = "trazo"
+description = "a drawing city builder game"
+repository = "https://github.com/eerii/trazo"
+authors = ["Eri <eri@inventati.org>"]
+license = "Apache-2.0 OR MIT"
+version = "0.1.0"
+edition = "2021"
+exclude = ["assets", "wasm", ".data"]
+
+
+[features]
+
+# Sets
+default = ["dev"]
+dev = [
+  "common",
+  "bevy/dynamic_linking",
+  "bevy/bevy_dev_tools",
+  "bevy/embedded_watcher",
+  "bevy/file_watcher",
+]
+release = ["common", "embedded"]
+common = []
+
+# Individual features
+embedded = ["bevy_embedded_assets"]
+trace = ["release", "bevy/trace_tracy"]
+
+
+[dependencies]
+
+# Bevy and plugins
+bevy = { version = "0.15", features = ["serialize", "wayland"] }
+bevy_embedded_assets = { version = "0.12", optional = true }
+
+# Other deps
+anyhow = { version = "1.0" }
+log = { version = "*", features = [
+  "max_level_debug",
+  "release_max_level_warn",
+] }
+macro_rules_attribute = { version = "0.2" }
+serde = { version = "1.0", features = ["derive"] }
+toml = { version = "0.8" }
+
+# Web
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = { version = "0.3", features = ["Storage"] }
+
+
+# Optimizations
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3 # Improves performance when developing, but slows down first compilation significantly
+debug = false # Disabled debug symbols for dependencies
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3     # Optimize for performance
+
+[profile.release-web] # Overrides for web builds
+inherits = "release"
+opt-level = "s"      # Optimize for size
+strip = "debuginfo"  # Removes debug information

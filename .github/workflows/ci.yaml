@@ -1,0 +1,92 @@
+# Based on https://github.com/bevyengine/bevy_github_ci_template/blob/main/.github/workflows/ci.yaml
+
+name: ci
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  cargo:
+    name: Cargo check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: nixbuild/nix-quick-install-action@v29
+
+      - name: Nix cache
+        uses: nix-community/cache-nix-action@v5
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+
+      - name: Use Nix flake
+        uses: nicknovitski/nix-develop@v1
+
+      - name: Rust cache
+        uses: leafwing-studios/cargo-cache@v2
+
+      - name: Format check
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: |
+          cargo clippy --all-targets --all-features --no-deps -- -Dwarnings
+          cargo clippy --examples --no-deps -- -Dwarnings
+
+      - name: Unit tests
+        run: cargo test
+
+      - name: Docs
+        run: |
+          cargo clean --doc
+          cargo doc --no-deps
+          echo '<meta http-equiv="refresh" content="0;url=trazo/index.html">' > target/doc/index.html
+          rm target/doc/.lock
+
+      - name: Upload docs artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/doc
+
+  toml:
+    name: Toml check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: nixbuild/nix-quick-install-action@v29
+
+      - name: Run Taplo
+        run: nix run nixpkgs#taplo fmt -- --check --diff
+
+  deploy:
+    name: Deploy docs
+    runs-on: ubuntu-latest
+    needs: cargo
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy docs
+        id: deployment
+        uses: actions/deploy-pages@v4
