@@ -23,9 +23,14 @@ pub(super) fn plugin(app: &mut App) {
             )
                 .chain()
                 .run_if(in_state(GameState::Play)),
+        )
+        .add_systems(
+            OnEnter(GameState::Startup),
+            |mut state: ResMut<NextState<GameState>>| {
+                // Inmediately transition to the Play state
+                state.set(GameState::Play);
+            },
         );
-
-    app.add_systems(PostUpdate, init.run_if(in_state(GameState::Startup)));
 }
 
 /// Indicates at which point the game is. Very useful for controlling which
@@ -55,13 +60,4 @@ pub enum PlaySet {
     ReadEvents,
     /// Animations and other systems that happen after everything is calculated.
     Animation,
-}
-
-// Systems
-// ---
-
-/// Basic logic to transition to the play state automatically
-/// This should be replaced by the loading system and menu
-fn init(mut state: ResMut<NextState<GameState>>) {
-    state.set(GameState::Play);
 }

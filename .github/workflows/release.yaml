@@ -65,12 +65,13 @@ jobs:
             nix: ''
             profile: release
 
-          - platform: macos
-            runner: macos-latest
-            targets: [x86_64-apple-darwin, aarch64-apple-darwin]
-            nix: .#default
-            profile: release
-            out_dir_suffix: .app/Contents/MacOS
+          # TODO: Fix MacOS
+          # - platform: macos
+          #   runner: macos-latest
+          #   targets: [x86_64-apple-darwin, aarch64-apple-darwin]
+          #   nix: .#default
+          #   profile: release
+          #   out_dir_suffix: .app/Contents/MacOS
 
     defaults:
       run:

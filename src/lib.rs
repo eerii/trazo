@@ -1,8 +1,10 @@
 //! Trazo: A drawing city builder
 
+// Document all public API
+#![warn(missing_docs)]
+// Lints
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
-#![warn(missing_docs)]
 
 #[macro_use]
 extern crate macro_rules_attribute;
@@ -26,15 +28,17 @@ impl Plugin for GamePlugin {
         let window_plugin = WindowPlugin {
             primary_window: Some(Window {
                 title: "Trazo".into(),
+                name: Some("trazo".into()),
                 canvas: Some("#bevy".into()),
                 prevent_default_event_handling: false,
+                resolution: (1500., 1000.).into(),
                 ..default()
             }),
             ..default()
         };
 
         let log_plugin = bevy::log::LogPlugin {
-            filter: "warn,wgpu=error,game=debug".into(),
+            filter: "warn,wgpu=error,trazo=debug".into(),
             ..default()
         };
 
