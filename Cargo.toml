@@ -32,8 +32,9 @@ trace = ["release", "bevy/trace_tracy"]
 [dependencies]
 
 # Bevy and plugins
-bevy = { version = "0.15", features = ["serialize", "wayland"] }
-bevy_embedded_assets = { version = "0.12", optional = true }
+bevy = { version = "0.16", features = ["serialize", "wayland"] }
+bevy_embedded_assets = { version = "0.13", optional = true }
+i-cant-believe-its-not-bsn = "0.3"
 
 # Other deps
 anyhow = { version = "1.0" }
@@ -43,7 +44,7 @@ log = { version = "*", features = [
 ] }
 macro_rules_attribute = { version = "0.2" }
 serde = { version = "1.0", features = ["derive"] }
-toml = { version = "0.8" }
+toml = "0.9"
 
 # Web
 [target.'cfg(target_arch = "wasm32")'.dependencies]

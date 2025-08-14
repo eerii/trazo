@@ -6,41 +6,6 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(PreUpdate, handle_later_commands);
 }
 
-/// Gets a single component from a [Query] or returns gracefully (no panic).
-#[macro_export]
-macro_rules! single {
-    ($q:expr, $r:expr) => {
-        match $q.get_single() {
-            Ok(m) => m,
-            _ => {
-                debug!("get single failed for ${}", stringify!($e));
-                $r
-            },
-        }
-    };
-    ($q:expr) => {
-        single!($q, return)
-    };
-}
-
-/// Gets a single mutable component from a [Query] or returns gracefully (no
-/// panic).
-#[macro_export]
-macro_rules! single_mut {
-    ($q:expr, $r:expr) => {
-        match $q.get_single_mut() {
-            Ok(m) => m,
-            _ => {
-                debug!("get single mut failed for ${}", stringify!($e));
-                $r
-            },
-        }
-    };
-    ($q:expr) => {
-        single_mut!($q, return)
-    };
-}
-
 /// Scheduled version of a [Commands] that runs after a timer is done.
 /// Based on the work by dylanj <https://discord.com/channels/691052431525675048/937158127491633152/1266369728402948136>
 ///
@@ -83,7 +48,7 @@ fn handle_later_commands(
             continue;
         }
         (later.cmd)(&mut cmd);
-        cmd.entity(entity).despawn_recursive();
+        cmd.entity(entity).despawn();
     }
 }
 
@@ -94,7 +59,7 @@ pub trait LaterCommandExt {
         &mut self,
         secs: f32,
         cmd: impl FnMut(&mut Commands) + Send + Sync + 'static,
-    ) -> EntityCommands;
+    ) -> EntityCommands<'_>;
 }
 
 impl LaterCommandExt for Commands<'_, '_> {
@@ -102,7 +67,7 @@ impl LaterCommandExt for Commands<'_, '_> {
         &mut self,
         secs: f32,
         cmd: impl FnMut(&mut Commands) + Send + Sync + 'static,
-    ) -> EntityCommands {
+    ) -> EntityCommands<'_> {
         self.spawn(LaterCommand::new(secs, cmd))
     }
 }

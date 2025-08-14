@@ -32,7 +32,7 @@
           # Rust
           cargo-watch
           cargo-expand
-          rust-analyzer-unwrapped
+          rust-analyzer
           # Toml
           taplo
           # Other
@@ -95,7 +95,8 @@
           # Regular shell
           default =
             let
-              toolchain = pkgs.rust-bin.nightly.latest.default.override {
+              # TODO: https://github.com/bevyengine/bevy/issues/20558
+              toolchain = pkgs.rust-bin.nightly."2025-08-02".default.override {
                 inherit extensions;
                 targets = optionals isDarwin [
                   "x86_64-apple-darwin"
@@ -105,14 +106,13 @@
               platform = pkgs.makeRustPlatform { inherit (toolchain) cargo rustc; };
             in
             mkShell rec {
-              buildInputs =
-                [
-                  toolchain
-                  platform.bindgenHook
-                ]
-                ++ general-deps
-                ++ optionals isLinux linux-deps
-                ++ optionals isDarwin darwin-deps;
+              buildInputs = [
+                toolchain
+                platform.bindgenHook
+              ]
+              ++ general-deps
+              ++ optionals isLinux linux-deps
+              ++ optionals isDarwin darwin-deps;
 
               RUST_SRC_PATH = "${toolchain}/lib/rustlib/src/rust/library";
               LD_LIBRARY_PATH = makeLibraryPath buildInputs;

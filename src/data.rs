@@ -92,7 +92,7 @@ pub trait PersistentExt: Resource + Serialize + DeserializeOwned + Default + Typ
     }
 
     /// Serializes the data of this resource and saves it.
-    fn persist(&self) -> Result<()> {
+    fn persist(&self) -> Result {
         let name = Self::type_path();
         let data = toml::to_string(self)
             .with_context(|| format!("Failed to serialize data for {}", name))?;

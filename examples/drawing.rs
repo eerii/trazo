@@ -15,7 +15,7 @@ fn main() {
     App::new()
         .add_plugins((GamePlugin, MeshPickingPlugin))
         .add_systems(OnEnter(GameState::Play), init)
-        .add_systems(Update, (on_resize, draw_curve))
+        .add_systems(Update, (on_resize, draw_curve, on_keyboard))
         .run();
 }
 
@@ -54,6 +54,11 @@ impl Drawing {
     }
 }
 
+//#[derive(Component, Default)]
+// struct ColorButton {
+//    selected: usize,
+//}
+
 // Systems
 // ---
 
@@ -63,43 +68,82 @@ fn init(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut config: ResMut<GizmoConfigStore>,
-) {
+) -> Result {
     let data = DrawData::default();
     cmd.insert_resource(data);
 
     // Canvas
-    let size = single!(window).size();
+    let size = window.single()?.size();
     cmd.spawn((
         Mesh2d(meshes.add(Rectangle::default())),
         MeshMaterial2d(materials.add(ColorMaterial::from_color(CANVAS_COLOR))),
         Transform::from_xyz(0., 0., CANVAS_LAYER).with_scale(size.extend(1.)),
         Canvas,
     ))
-    .observe(on_draw_start)
-    .observe(on_draw);
+    .observe(on_pointer_down)
+    .observe(on_pointer_draw);
+
+    // Color button
+    // cmd.spawn((ColorButton::default(), Button, Text::new("Color"), Node {
+    //    position_type: PositionType::Absolute,
+    //    bottom: Val::Px(5.0),
+    //    right: Val::Px(5.0),
+    //    ..default()
+    //}));
 
     // Gizmos
     let (config, _) = config.config_mut::<DefaultGizmoConfigGroup>();
-    config.line_width = 10.;
-    config.line_joints = GizmoLineJoint::Round(4);
+    config.line.width = 10.;
+    config.line.joints = GizmoLineJoint::Round(4);
+
+    Ok(())
 }
 
-fn on_draw_start(drag: Trigger<Pointer<DragStart>>, mut cmd: Commands, mut data: ResMut<DrawData>) {
-    data.line_start = drag.hit.position.unwrap_or_default().xy();
-    data.selected_color = (data.selected_color + 1) % COLORS.len();
-    data.current = Some(
-        cmd.spawn(Drawing::new(
-            data.line_start,
-            COLORS[data.selected_color].into(),
-        ))
-        .id(),
-    );
+fn on_pointer_down(
+    click: Trigger<Pointer<Pressed>>,
+    mut cmd: Commands,
+    drawings: Query<Entity, With<Drawing>>,
+    mut data: ResMut<DrawData>,
+) {
+    match click.button {
+        // Start a new drawing
+        PointerButton::Primary => {
+            data.line_start = click.hit.position.unwrap_or_default().xy();
+            data.current = Some(
+                cmd.spawn(Drawing::new(
+                    data.line_start,
+                    COLORS[data.selected_color].into(),
+                ))
+                .id(),
+            );
+        },
+        // Clear the screen
+        PointerButton::Secondary => {
+            for drawing in &drawings {
+                cmd.entity(drawing).despawn();
+            }
+        },
+        PointerButton::Middle => {},
+    }
 }
 
-fn on_draw(drag: Trigger<Pointer<Drag>>, mut drawings: Query<&mut Drawing>, data: Res<DrawData>) {
-    let pos = data.line_start + drag.distance * Vec2::new(1., -1.);
+// Temporary, change the color
+fn on_keyboard(keys: Res<ButtonInput<KeyCode>>, mut data: ResMut<DrawData>) {
+    if keys.just_pressed(KeyCode::Space) {
+        data.selected_color = (data.selected_color + 1) % COLORS.len();
+    }
+}
 
-    let mut drawing = drawings.get_mut(data.current.unwrap()).unwrap();
+// Continue the drawing
+fn on_pointer_draw(
+    pointer: Trigger<Pointer<Drag>>,
+    mut drawings: Query<&mut Drawing>,
+    data: Res<DrawData>,
+) {
+    let Some(current) = data.current else { return };
+    let mut drawing = drawings.get_mut(current).unwrap();
+
+    let pos = data.line_start + pointer.distance * Vec2::new(1., -1.);
     let last = drawing.points.last().unwrap();
 
     if (pos - last).length() < 10. {
@@ -115,16 +159,7 @@ fn on_draw(drag: Trigger<Pointer<Drag>>, mut drawings: Query<&mut Drawing>, data
     }
 }
 
-fn on_resize(
-    mut readedr: EventReader<WindowResized>,
-    mut canvas: Query<&mut Transform, With<Canvas>>,
-) {
-    for e in readedr.read() {
-        let mut canvas = single_mut!(canvas);
-        canvas.scale = Vec3::new(e.width, e.height, 1.);
-    }
-}
-
+/// Quick drawing of the curves to the screen.
 fn draw_curve(drawings: Query<&Drawing>, mut gizmos: Gizmos) {
     for drawing in &drawings {
         let Some(curve) = &drawing.curve else {
@@ -136,4 +171,16 @@ fn draw_curve(drawings: Query<&Drawing>, mut gizmos: Gizmos) {
             drawing.color,
         );
     }
+}
+
+/// Fit the canvas to the screen.
+fn on_resize(
+    mut readedr: EventReader<WindowResized>,
+    mut canvas: Query<&mut Transform, With<Canvas>>,
+) -> Result {
+    for e in readedr.read() {
+        let mut canvas = canvas.single_mut()?;
+        canvas.scale = Vec3::new(e.width, e.height, 1.);
+    }
+    Ok(())
 }
