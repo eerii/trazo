@@ -14,6 +14,7 @@ use bevy::prelude::*;
 pub mod camera;
 pub mod data;
 pub mod helpers;
+pub mod menu;
 pub mod prelude;
 pub mod states;
 
@@ -49,6 +50,9 @@ impl Plugin for GamePlugin {
             helpers::plugin,
             states::plugin,
         ));
+
+        #[cfg(feature = "menu")]
+        app.add_plugins(menu::plugin);
 
         #[cfg(feature = "embedded")]
         app.add_plugins(bevy_embedded_assets::EmbeddedAssetPlugin::default());
