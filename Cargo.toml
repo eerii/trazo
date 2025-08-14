@@ -21,12 +21,13 @@ dev = [
   "bevy/embedded_watcher",
   "bevy/file_watcher",
 ]
-release = ["common", "embedded"]
+release = ["common", "embedded", "menu"]
 common = []
 
 # Individual features
 embedded = ["bevy_embedded_assets"]
 trace = ["release", "bevy/trace_tracy"]
+menu = []
 
 
 [dependencies]
@@ -34,7 +35,6 @@ trace = ["release", "bevy/trace_tracy"]
 # Bevy and plugins
 bevy = { version = "0.16", features = ["serialize", "wayland"] }
 bevy_embedded_assets = { version = "0.13", optional = true }
-i-cant-believe-its-not-bsn = "0.3"
 
 # Other deps
 anyhow = { version = "1.0" }
