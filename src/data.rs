@@ -124,13 +124,13 @@ pub trait PersistentExt: Resource + Serialize + DeserializeOwned + Default + Typ
 
     /// Mutates the values of the resource using a closure and writes the result
     /// to disk after it is done.
-    fn update(&mut self, f: impl Fn(&mut Self)) -> Result<()> {
+    fn update(&mut self, f: impl Fn(&mut Self)) -> Result {
         f(self);
         self.persist()
     }
 
     /// Returns the resource to its default value and saves it.
-    fn reset(&mut self) -> Result<()> {
+    fn reset(&mut self) -> Result {
         *self = Self::default();
         self.persist()
     }

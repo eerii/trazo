@@ -32,7 +32,6 @@
           # Rust
           cargo-watch
           cargo-expand
-          rust-analyzer
           # Toml
           taplo
           # Other
@@ -88,6 +87,7 @@
           "clippy"
           "rustfmt"
           "rust-src"
+          "rust-analyzer"
         ];
       in
       {
@@ -95,8 +95,7 @@
           # Regular shell
           default =
             let
-              # TODO: https://github.com/bevyengine/bevy/issues/20558
-              toolchain = pkgs.rust-bin.nightly."2025-08-02".default.override {
+              toolchain = pkgs.rust-bin.nightly.latest.default.override {
                 inherit extensions;
                 targets = optionals isDarwin [
                   "x86_64-apple-darwin"

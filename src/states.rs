@@ -11,7 +11,7 @@ use crate::prelude::*;
 /// Adds [GameState] and [PlaySet] to the [App].
 /// Also enables [StateScoped] so enitities can be automatically cleaned up.
 pub(super) fn plugin(app: &mut App) {
-    app.insert_state(GameState::default())
+    app.init_state::<GameState>()
         .enable_state_scoped_entities::<GameState>()
         .configure_sets(
             Update,
@@ -26,25 +26,46 @@ pub(super) fn plugin(app: &mut App) {
         )
         .add_systems(
             OnEnter(GameState::Startup),
-            |mut state: ResMut<NextState<GameState>>| {
-                // Inmediately transition to the Play state
-                state.set(GameState::Play);
+            |mut next_state: ResMut<NextState<GameState>>| {
+                // Inmediately transition to the Menu state if enabled.
+                // Otherwise start the game in the Play state.
+                #[cfg(feature = "menu")]
+                next_state.set(GameState::Menu);
+                #[cfg(not(feature = "menu"))]
+                next_state.set(GameState::Play);
             },
         );
+
+    #[cfg(feature = "menu")]
+    app.add_sub_state::<MenuState>()
+        .enable_state_scoped_entities::<MenuState>();
 }
 
 /// Indicates at which point the game is. Very useful for controlling which
 /// systems run when ([in_state]) and to create transitions ([OnEnter]/[OnExit])
 /// You can also scope entities to a state with StateScoped, and they will
-/// be deleted automatically when the state ends
+/// be deleted automatically when the state ends.
 #[derive(Default, States, Std!)]
 pub enum GameState {
     /// The game starts on the [Startup] state.
     /// It runs before *anything*, including the [Startup] schedule.
     #[default]
     Startup,
+    /// The menu of the game. All of the systems are paused.
+    #[cfg(feature = "menu")]
+    Menu,
     /// Main state representing the actual gameplay.
     Play,
+}
+
+/// Substates of the `GameState::Menu` state.
+#[cfg(feature = "menu")]
+#[derive(Default, SubStates, Std!)]
+#[source(GameState = GameState::Menu)]
+pub enum MenuState {
+    /// Initial menu screen.
+    #[default]
+    Main,
 }
 
 /// Main grouping of systems inside the `GameState::Play` state.

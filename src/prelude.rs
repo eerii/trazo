@@ -7,17 +7,17 @@ pub use bevy::{
     prelude::*,
     window::{PrimaryWindow, WindowResized},
 };
-pub use i_cant_believe_its_not_bsn::*;
 
+#[cfg(feature = "menu")]
+pub use crate::states::MenuState;
 pub use crate::{
     camera::GameCamera,
     data::{GameOptions, PersistentExt},
     helpers::LaterCommandExt,
     states::{GameState, PlaySet},
     GamePlugin,
+    Persistent,
 };
-// Exports for macros
-pub use crate::Persistent;
 
 // Shorthands for derive macros
 macro_rules_attribute::derive_alias! {

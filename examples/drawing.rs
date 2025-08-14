@@ -15,7 +15,10 @@ fn main() {
     App::new()
         .add_plugins((GamePlugin, MeshPickingPlugin))
         .add_systems(OnEnter(GameState::Play), init)
-        .add_systems(Update, (on_resize, draw_curve, on_keyboard))
+        .add_systems(
+            Update,
+            (on_resize, draw_curve, on_keyboard).in_set(PlaySet::Update),
+        )
         .run();
 }
 
@@ -54,11 +57,6 @@ impl Drawing {
     }
 }
 
-//#[derive(Component, Default)]
-// struct ColorButton {
-//    selected: usize,
-//}
-
 // Systems
 // ---
 
@@ -79,17 +77,10 @@ fn init(
         MeshMaterial2d(materials.add(ColorMaterial::from_color(CANVAS_COLOR))),
         Transform::from_xyz(0., 0., CANVAS_LAYER).with_scale(size.extend(1.)),
         Canvas,
+        StateScoped(GameState::Play),
     ))
     .observe(on_pointer_down)
     .observe(on_pointer_draw);
-
-    // Color button
-    // cmd.spawn((ColorButton::default(), Button, Text::new("Color"), Node {
-    //    position_type: PositionType::Absolute,
-    //    bottom: Val::Px(5.0),
-    //    right: Val::Px(5.0),
-    //    ..default()
-    //}));
 
     // Gizmos
     let (config, _) = config.config_mut::<DefaultGizmoConfigGroup>();
@@ -128,9 +119,17 @@ fn on_pointer_down(
 }
 
 // Temporary, change the color
-fn on_keyboard(keys: Res<ButtonInput<KeyCode>>, mut data: ResMut<DrawData>) {
+fn on_keyboard(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut data: ResMut<DrawData>,
+    mut _next_state: ResMut<NextState<GameState>>,
+) {
     if keys.just_pressed(KeyCode::Space) {
         data.selected_color = (data.selected_color + 1) % COLORS.len();
+    }
+    #[cfg(feature = "menu")]
+    if keys.just_pressed(KeyCode::Escape) {
+        _next_state.set(GameState::Menu);
     }
 }
 
@@ -165,6 +164,7 @@ fn draw_curve(drawings: Query<&Drawing>, mut gizmos: Gizmos) {
         let Some(curve) = &drawing.curve else {
             continue;
         };
+        // TODO: Investigate new persistent gizmos
         gizmos.curve_2d(
             curve,
             (0..=drawing.length).map(|n| n as f32 / drawing.length as f32),
